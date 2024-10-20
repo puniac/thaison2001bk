@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gửi em</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            transition: background-color 1s;
+            position: relative;
+            font-family: Arial, sans-serif;
+            overflow: hidden; /* Ẩn phần vượt ra ngoài */
+        }
+
+        .bubble {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            position: absolute;
+            top: -60px;
+            transition: transform 5s, width 2s, height 2s, border-radius 2s;
+        }
+
+        .message {
+          font-family: 'Roboto', sans-serif; /* Sử dụng font Roboto */
+          font-size: 20px;
+          color: #000000; /* Màu hồng dịu */
+          margin: -100px 0;
+          letter-spacing: 1px;
+          line-height: 1.5;
+        }
+
+
+        .falling {
+            transform: translateY(17vh); /* Rơi xuống giữa màn hình */
+        }
+
+        .expand {
+            width: 1000px; /* Kích thước mở rộng */
+            height: 600px; /* Kích thước mở rộng */
+            border-radius: 40px; /* Bo góc */
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: opacity 1s;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50; /* Màu xanh lá */
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background-color: #45a049; /* Màu xanh đậm hơn khi hover */
+        }
+
+        .fade-out {
+            opacity: 0;
+        }
+
+        .bg-pink {
+            background-color: #ffcccb; /* Màu hồng nhạt */
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #333;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        h1.show {
+            opacity: 1;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+            color: #333;
+        }
+
+        #pauseButton {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #f44336; /* Màu đỏ */
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #pauseButton:hover {
+            background-color: #e53935; /* Màu đỏ đậm hơn khi hover */
+        }
+
+        .square {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 15px; /* Bán kính góc để tạo hình vuông có góc tròn */
+        }
+
+
+        @keyframes moveUp_rotate {
+            0% {
+                transform: translate(0, 100vh) rotate(0deg); /* Bắt đầu từ dưới */
+            }
+            100% {
+                transform: translate(0, -100vh) rotate(360deg); /* Kết thúc ở trên */
+            }
+        }
+
+        @keyframes fade-in-out {
+            0% {
+                letter-spacing: -0.5em;
+                filter: blur(12px) opacity(0%);
+            }
+            30% {
+                letter-spacing: 0;
+                filter: blur(0) opacity(1);
+            }
+            100% {
+                letter-spacing: 0;
+                filter: blur(0) opacity(1);
+            }
+        }
+
+        .blurOut {
+            color: #aba88c;
+            text-shadow: 2px 2px 5px #fff8b3;
+            font-family: 'Roboto', sans-serif; /* Sử dụng font Roboto */
+            font-weight: bold;
+            font-size: 20px;
+            width: 100%;
+            text-align: center;
+            margin-top: 100px;
+            animation-name: fade-in-out;
+            animation-duration: 2s;
+            animation-fill-mode: forwards; /* Để giữ trạng thái sau khi hoàn thành */
+        }
+    </style>
+    <style>/*popup*/
+        .popup {
+            position: fixed;
+            width: 125px; /* Kích thước chiều rộng giảm xuống một nửa */
+            height: 75px; /* Kích thước chiều cao giảm xuống một nửa */
+            background-color: rgba(255, 182, 193, 0.4); /* Nền màu hồng với opacity 40% */
+            border: none;
+            border-radius: 50%; /* Hình dạng trái tim */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px; /* Kích thước chữ nhỏ hơn */
+            color: rgba(255, 69, 113, 0.8); /* Màu chữ hồng đậm với opacity */
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.7);
+            transition: transform 0.3s ease-in-out, opacity 0.5s ease;
+            opacity: 0; /* Khởi tạo độ mờ */
+            z-index: 9999; /* Đảm bảo popup nằm trên các phần tử khác */
+            transform: scale(0.8); /* Khởi tạo kích thước nhỏ hơn */
+        }
+
+        .popup.show {
+            opacity: 1; /* Hiện popup */
+            transform: scale(1); /* Phóng to về kích thước ban đầu */
+        }
+
+        .popup-inner {
+            background-color: rgba(255, 255, 255, 0.1); /* Nền trắng với opacity 10% */
+            border-radius: 15px;
+            padding: 5px; /* Tăng khoảng cách bên trong */
+            text-align: center;
+            color: rgba(255, 105, 180, 0.8); /* Màu chữ hồng nhạt với opacity */
+            font-size: 18px; /* Kích thước chữ nhỏ hơn */
+            position: relative; /* Để thêm hiệu ứng */
+        }
+
+        .popup-inner:after {
+            content: '❤️'; /* Biểu tượng trái tim */
+            position: absolute;
+            bottom: 5px; /* Để biểu tượng nằm bên dưới nội dung */
+            right: 5px; /* Để biểu tượng nằm bên phải nội dung */
+            font-size: 20px; /* Kích thước trái tim */
+        }
+    </style>
+
+</head>
+<body>
+    <div class="bubble" id="bubble"></div>
+    <div class="message" id="message"></div>
+    <h1 class="show" id="welcomeMessage">Em đã sẵn sàng chưa ???</h1>
+    <button id="readyButton">Em đã sẵn sàng</button>
+    <!-- <audio id="backgroundMusic" src="tranbonho.mp3" preload="auto"></audio> -->
+    <audio id="backgroundMusic" src="https://raw.githubusercontent.com/puniac/thaison2001bk/master-branch/tranbonho.mp3"></audio>
+
+    <footer>
+        <div class ='blurOut' id="lyricsDisplay"></div>
+    </footer>
+
+    <button id="pauseButton" style="display:none;">Pause</button>
+
+    <script>
+        const bubble = document.getElementById('bubble');
+        const message = document.getElementById('message');
+        const button = document.getElementById('readyButton');
+        const music = document.getElementById('backgroundMusic');
+        const pauseButton = document.getElementById('pauseButton');
+        const lyricsDisplay = document.getElementById('lyricsDisplay');
+        const greetingLines = [
+            "Không chúc em giàu có,",
+            "Chỉ chú em bình yên,",
+            "Không chúc em lộng lẫy,",
+            "Chúc em không muộn phiền.",
+            '',
+            "Gửi em chút lạc quan,",
+            "không chờ ngày lấy lại.",
+            "Dù ngày mai ngang trái.",
+            "Mong em ít thở dài.",
+            "",
+            "Em nhớ đừng bỏ bữa,",
+            "Hạn chế đi ra đường,",
+            "Uống nhiều nước cam nữa,",
+            "Thân mình, phải tự thương!",
+            "",
+            "Mỗi ngày đều là một nữ hoàng kiêu sa",
+            "Còn hôm nay chúc em là một công chúa xinh đẹp.",
+            "",
+            "Yêu em, Dương Thị Thảo Nguyên ❤️",
+            "Chúc em ngày 20-10 vui vẻ."
+        ];
+
+        function showMessage() {
+            message.style.opacity = 1; // Đảm bảo phần tử được hiển thị
+            let lineIndex = 0;
+            let charIndex = 0;
+            let currentLine = '';
+
+            function typeCharacter() {
+                if (lineIndex < greetingLines.length) {
+                    currentLine = greetingLines[lineIndex];
+
+                    // Kiểm tra nếu chưa gõ hết ký tự của dòng hiện tại
+                    if (charIndex < currentLine.length) {
+                        message.innerHTML += currentLine.charAt(charIndex); // Thêm ký tự hiện tại vào nội dung
+                        charIndex++;
+                        setTimeout(typeCharacter, 100); // Thời gian giữa các ký tự
+                    } else {
+                        // Khi hết dòng, thêm dấu xuống hàng và chuyển sang dòng tiếp theo
+                        message.innerHTML += '<br>';
+                        charIndex = 0;
+                        lineIndex++;
+                        setTimeout(typeCharacter, 500); // Thời gian chuyển sang dòng mới
+                    }
+                }
+            }
+
+            typeCharacter();
+        }
+
+
+
+        // Tạo biến flag để ngăn việc xử lý nhiều lần
+        let bubbleTransitionDone = false;
+
+        // Khi bong bóng đã rơi xong, hiển thị lời chúc
+        bubble.addEventListener('transitionend', () => {
+            // Chỉ thực hiện nếu quá trình chuyển đổi chưa hoàn tất
+            if (!bubbleTransitionDone && bubble.classList.contains('falling')) {
+                bubbleTransitionDone = true; // Đặt cờ để ngăn lặp lại
+
+                // Thêm hiệu ứng phình to
+                bubble.classList.add('expand');
+                console.log('Bubble is expanding...');
+
+                // Hiển thị lời chúc sau khi phình to
+                setTimeout(() => {
+                    console.log('Showing message...');
+                    showMessage(); // Hiển thị lời chúc
+
+                    // Reset trạng thái của bong bóng
+                    resetBubble(bubble);
+
+                    // Reset flag để chuẩn bị cho lần rơi tiếp theo
+                    bubbleTransitionDone = false;
+                }, 500); // Độ trễ trước khi hiển thị lời chúc (500ms)
+            }
+        });
+
+
+
+
+        function showText(element, text, delay) {
+            let i = 0;
+            function addLetter() {
+                if (i < text.length) {
+                    element.textContent += text[i]; // Thêm từng ký tự
+                    i++;
+                    setTimeout(addLetter, delay); // Gọi lại hàm sau một khoảng thời gian
+                }
+            }
+
+            addLetter(); // Bắt đầu hiển thị từ ký tự đầu tiên
+        }
+
+            button.addEventListener('click', () => {
+            button.classList.add('fade-out');
+            document.body.classList.add('bg-pink');
+            music.play();
+
+            // Hiện nút Pause
+            pauseButton.style.display = 'block';
+
+            // Ẩn nút sau 1 giây (thời gian mờ dần)
+            setTimeout(() => {
+                button.style.display = 'none';
+            }, 1000);
+
+            // Ẩn thẻ h1
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            welcomeMessage.classList.remove('show'); // Loại bỏ lớp show
+
+            bubble.classList.add('falling');
+
+            // Tạo hiệu ứng hình vuông
+            createSquares();
+
+            // Cập nhật lời bài hát
+            updateLyrics();
+        });
+
+        pauseButton.addEventListener('click', () => {
+            if (music.paused) {
+                music.play();
+                pauseButton.textContent = 'Pause';
+            } else {
+                music.pause();
+                pauseButton.textContent = 'Play';
+            }
+        });
+
+        // Hàm cập nhật lời bài hát
+        function updateLyrics() {
+            const lyrics = [
+                { time: 12340 , text: "♪ Có tham lam lắm không ♫" },
+                { time: 14590 , text: "♪ Khi anh chỉ muốn mình em trong đầu ♫" },
+                { time: 19630 , text: "♪ Với từng chiếc áo phông ♫" },
+                { time: 22000 , text: "♪ Mang hương em mỗi đêm ♫" },
+                { time: 24100 , text: "♪ Cho ta quên sầu ♫" },
+                { time: 27450 , text: "♪ Loay hoay quay cuồng ♫" },
+                { time: 28890 , text: "♪ Tại sao con tim ♫" },
+                { time: 30040 , text: "♪ Cứ ôm mãi một bông hoa không rời ♫" },
+                { time: 32970 , text: "♪ Sự thật là bộ nhớ đầy quá ♫" },
+                { time: 34730 , text: "♪ Dữ liệu đẹp anh khó thể xóa ♫" },
+                { time: 37640 , text: "♪ Từng bóng hình em ♫" },
+                { time: 42030 , text: "♪ Hóa ra chuyện mình thật tình ♫" },
+                { time: 45260 , text: "♪ Tựa cuốn film từ đài truyền hình ♫" },
+                { time: 48950 , text: "♪ Nên anh lưu giữ file ♫" },
+                { time: 52140 , text: "♪ Để khó phai good vibe ♫" },
+                { time: 55930 , text: "♪ Tràn ngập bộ nhớ nhớ nhớ nhớ em ♫" },
+                { time: 59480 , text: "♪ Cho anh cảm giác không sao quên được ♫" },
+                { time: 63030 , text: "♪ Tràn ngập bộ nhớ nhớ nhớ nhớ em ♫" },
+                { time: 66770 , text: "♪ Nhưng anh mong có cảm giác này mãi ♫" },
+                { time: 71640 , text: "♪ oh uh oh uh oh uh oh ~ ♫" },
+                { time: 75440 , text: "♪ ~ oh uh oh uh oh uh oh ♫" },
+                { time: 79020 , text: "♪ oh uh oh uh oh uh oh ! ♫" },
+                { time: 82740 , text: "♪ ! oh uh oh uh oh uh oh ♫" },
+                { time: 87220 , text: "♪ Yêu thương sao cho vừa ♫" },
+                { time: 88760 , text: "♪ Hay anh đang lo thừa ♫" },
+                { time: 90650 , text: "♪ Cho anh mong như cơm bữa ♫" },
+                { time: 92730 , text: "♪ Em đừng xinh như thế nữa ♫" },
+                { time: 94760 , text: "♪ Loạn nhịp cả tim lên rồi ♫" },
+                { time: 96250 , text: "♪ Đầu này toàn là em mà thôi ♫" },
+                { time: 98080 , text: "♪ ~ Yh Eh Eh ~ ♫" },
+                { time: 98890 , text: "♪ ~ Yh Eh Eh ~ ♫" },
+                { time: 99760 , text: "♪ ~ Yh Eh ~ ♫" },
+                { time: 100760 , text: "♪ Nỗi nhớ em cầu kỳ ♫" },
+                { time: 102360 , text: "♪ Nên chẳng biết lý do là gì ♫" },
+                { time: 104620 , text: "♪ Hao tốn hơn nhiều Gb ♫" },
+                { time: 105990 , text: "♪ Nên cần dùng thêm USB ♫" },
+                { time: 108350 , text: "♪ Nỗi nhớ em cầu kỳ ♫" },
+                { time: 109770 , text: "♪ Nên chẳng biết lý do là gì ♫" },
+                { time: 112130 , text: "♪ Hao tốn hơn nhiều G ♫" },
+                { time: 113460 , text: "♪ Nên cần DOMIC ♫" },
+                { time: 115900 , text: "♪ Tràn ngập bộ nhớ nhớ nhớ nhớ em ♫" },
+                { time: 119620 , text: "♪ Cho anh cảm giác không sao quên được ♫" },
+                { time: 123360 , text: "♪ Tràn ngập bộ nhớ nhớ nhớ nhớ em ♫" },
+                { time: 126910 , text: "♪ Nhưng anh mong có cảm giác này mãi ♫" },
+                { time: 131760 , text: "♪ oh uh oh uh oh uh oh ~ ♫" },
+                { time: 135520 , text: "♪ ~ oh uh oh uh oh uh oh ♫" },
+                { time: 139140 , text: "♪ oh uh oh uh oh uh oh ! ♫" },
+                { time: 142980 , text: "♪ ! oh uh oh uh oh uh oh ♫" },
+                { time: 146930 , text: "♪  ♫" },
+                { time: 161200 , text: "♪ Tràn ngập bộ nhớ nhớ nhớ nhớ em ♫" },
+                { time: 164430 , text: "♪ Tràn ngập bộ nhớ nhớ nhớ nhớ em ♫" },
+                { time: 168250 , text: "♪ Tràn ngập bộ nhớ nhớ nhớ nhớ em ♫" },
+                { time: 172010 , text: "♪ Tràn ngập bộ nhớ em ♫" }
+            ];
+
+            let currentLine = 0;
+
+            function updateLine() {
+                const currentTime = music.currentTime * 1000; // Chuyển sang milliseconds
+
+                // Kiểm tra lời bài hát để cập nhật
+                if (currentLine < lyrics.length && currentTime >= lyrics[currentLine].time) {
+                    lyricsDisplay.classList.remove('blurOut');
+                    lyricsDisplay.textContent = lyrics[currentLine].text; // Hiện lời bài hát
+                    // Thêm lại lớp blurOut sau một khoảng thời gian để tạo hiệu ứng mờ
+                    setTimeout(() => {
+                        lyricsDisplay.classList.add('blurOut');
+                    }, 0); // Thời gian hiển thị lời bài hát trước khi mờ đi (3000ms = 3 giây)
+                    currentLine++;
+
+                }
+
+                requestAnimationFrame(updateLine); // Cập nhật tiếp tục
+            }
+
+            updateLine(); // Bắt đầu cập nhật lời bài hát
+        }
+
+        function createSquares() {
+            const numSquares = 6; // Số lượng hình vuông
+            for (let i = 0; i < numSquares; i++) {
+                const square = document.createElement('div');
+                const size = Math.random() * 100 + 20; // Kích thước ngẫu nhiên từ 20 đến 120px
+                square.className = 'square';
+                square.style.width = `${size}px`;
+                square.style.height = `${size}px`;
+                square.style.left = `${Math.random() * 100}vw`; // Vị trí trái ngẫu nhiên
+                square.style.opacity = Math.random() * 0.3 + 0.1;
+                square.style.animationDuration = `${Math.random() * 15 + 10}s`; // Thời gian hoạt hình ngẫu nhiên
+                square.style.animationName = 'moveUp_rotate'; // Thiết lập tên animation
+
+                // Thêm sự kiện click
+                square.addEventListener('click', () => {
+                    const effect = Math.random() < 0.5 ? 'heart' : 'pop'; // Chọn ngẫu nhiên giữa trái tim hoặc nổ
+                    if (effect === 'heart') {
+                        square.classList.add('transform-to-heart'); // Thêm lớp biến đổi thành trái tim
+                    } else {
+                        square.classList.add('pop-effect'); // Thêm lớp nổ như bong bóng
+                    }
+
+                    // Xóa hình vuông sau khi hoàn thành hoạt hình
+                    square.addEventListener('animationend', () => {
+                        square.remove();
+                    });
+                });
+
+                document.body.appendChild(square);
+
+                // Xóa hình vuông sau khi hoàn thành hoạt hình
+                square.addEventListener('animationend', () => {
+                    square.remove();
+                });
+            }
+
+            // Gọi hàm sau mỗi khoảng thời gian ngẫu nhiên để tạo thêm hình vuông
+            setTimeout(createSquares, Math.random() * 2000 + 3500);
+        }
+
+    /*popup*/
+        function showPopup() {
+            const popup = document.createElement('div');
+            popup.className = 'popup';
+            const innerContent = document.createElement('div');
+            innerContent.className = 'popup-inner';
+            innerContent.innerText = 'Nhớ em'; // Thay đổi nội dung nếu cần
+            popup.appendChild(innerContent);
+            document.body.appendChild(popup);
+
+            // Vị trí ngẫu nhiên
+            const x = Math.random() * (window.innerWidth) /2 * (Math.random() < 0.5 ? -1 : 1); // Trừ chiều rộng của popup
+            const y = Math.random() * (window.innerHeight) /2 * (Math.random() < 0.5 ? -1 : 1); // Trừ chiều cao của popup
+            popup.style.transform = `translate(${x}px, ${y}px)`;
+            popup.style.opacity = 1; // Hiện popup
+
+            // Đóng popup sau 3 giây
+            setTimeout(() => {
+                popup.style.opacity = 0; // Từ từ mờ đi
+                setTimeout(() => popup.remove(), 500); // Xóa sau khi đã mờ
+            }, 5000);
+        }
+
+        function burstMemory() {
+            for (let i = 0; i < 100; i++) { // Tạo 50 cửa sổ popup
+                setTimeout(showPopup, i * 50); // Thêm độ trễ cho mỗi popup
+            }
+        }  
+      setTimeout(burstMemory, 55930);
+        setTimeout(burstMemory, 63030);
+        setTimeout(burstMemory, 115900);
+        setTimeout(burstMemory, 123360);
+        setTimeout(burstMemory, 161200);
+        setTimeout(burstMemory, 164430);
+        setTimeout(burstMemory, 168250);
+    </script>
+
+</body>
+</html>
